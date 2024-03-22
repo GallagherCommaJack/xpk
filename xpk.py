@@ -1052,6 +1052,12 @@ UserFacingNameToSystemCharacteristics = {
 
     # CPU system characteristics
     # n2-standard-32-$VMs
+    'm1-megamem-96-1': SystemCharacteristics(
+      'N/A', 1,'N/A', 'm1-megamem-96', 1, AcceleratorType['CPU'], 'm1-megamem-96-1'
+    ),
+    'n2-standard-64-1': SystemCharacteristics(
+      'N/A', 1,'N/A', 'n2-standard-64', 1, AcceleratorType['CPU'], 'n2-standard-64-1'
+    ),
     'n2-standard-32-1': SystemCharacteristics(
       'N/A', 1,'N/A', 'n2-standard-32', 1, AcceleratorType['CPU'], 'n2-standard-32-1'
     ),
@@ -1670,6 +1676,8 @@ def run_gke_cluster_create_command(args) -> int:
       f' --node-locations={args.zone}'
       f' --cluster-version={args.gke_version}'
       f' --machine-type={machine_type}'
+      ' --enable-ip-alias '
+      f' --create-subnetwork name={args.cluster}-subnetwork'
   )
 
   if _SERVICE_ACCOUNT_FEATURE_FLAG:
@@ -2248,6 +2256,10 @@ def run_gke_node_pool_create_command(args, system) -> int:
         f' --additional-node-network network={args.cluster}-net-4,subnetwork={args.cluster}-sub-4'
         ' --no-enable-autoupgrade  --scopes="https://www.googleapis.com/auth/cloud-platform"'
         )
+    elif system.accelerator_type == AcceleratorType['CPU'] and system.device_type in ['n2-standard-64-1','m1-megamem-96-1']:
+      command += (f' --num-nodes={system.vms_per_slice}')
+      command += (' --disk-size=300')
+      command += (' --scopes=storage-full,gke-default')
 
     if _SERVICE_ACCOUNT_FEATURE_FLAG:
       service_account_name = get_service_account_name(args)
